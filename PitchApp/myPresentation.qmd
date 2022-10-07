@@ -1,0 +1,224 @@
+---
+title: "myPresentation"
+author: "Vijayakumar"
+format: revealjs
+editor: visual
+---
+
+## Agriculture Schemes OpenData Plotter
+
+========================================================
+
+About: "myPresentation with Latest RStudio version Studio 2022.07.2 Build 576 with Quarto Presentation" author: "Vijayakumar" format: revealjs editor: visual
+
+## Overview
+
+========================================================
+
+This presentation was prepared for the \*\*Course Project: Shiny Application and Reproducible Pitch\*\*
+
+The shiny app developed for this assignment is avalilable: https://chilamkurthi.shinyapps.io/ShinyApp-ReproduciblePitch/
+
+The source codes of ui.R and server.R and also R Presentation are available on the GitHub repo: https://github.com/chilamkurthy/DDP-Shiny-ReproduciblePitch
+
+AgriSchemes occupies 30% to 80% of the financial and economical services market, depending on the state and product in India.
+
+## Available Data
+
+========================================================
+
+\* Revenue of legal entities by industries and states
+
+\* The income level of the population - salaries, pensions, grants, allowances
+
+\* Propensity to save and consume
+
+\* Level of crediting in different regions
+
+\* Mobility of the population at home and abroad
+
+\* The share of expenses for food, housing and communal services, transport and other items
+
+The app has several inputs to manipulate the data and plot. A user can select a measurement, state and period.
+
+!\[Main screenshot\](Figures/Ex1.png)
+
+## How It Works
+
+========================================================
+
+The app has several inputs to manipulate the data and plot. A user can select a measurement, state and period.
+
+\* Select a state of interest
+
+\* Select a variable (information about partial economic processes)
+
+\* Select a period of interest:
+
+-   Date range - specifies the begining date and end dates of showing data.
+
+-   Years - a slider that specifies the years of showing data.
+
+## How It Works (Continues..)
+
+========================================================
+
+-   Finally, All the time - showing the data for all the time.
+
+The user also could select an approximation model for the showing data:
+
+\* Auto - the plot generates an approximation curve automatically
+
+\* Linear model - the plot generates Linear approximation model curve
+
+\* Poly model - the plot generates polynom model curve for the presented data
+
+## ui.R Code
+
+========================================================
+
+shinyUI(fluidPage(
+
+\# Application title titlePanel("Agriculture Scheme Open Data"),
+
+\# Sidebar with a slider input for number of bins sidebarLayout( sidebarPanel( uiOutput("State"),uiOutput("rname"), radioButtons("period", "Choose a period:", c("Date range"="mon", "Years" = "year", "From the year begin" = "yearbegin", "All the time" = "all"), selected = "all"), uiOutput("slider1"), uiOutput("slider2"), uiOutput("dates"), checkboxGroupInput("chkGroup", label = h3("Geom smooth"), choices = list("Auto" = 1, "Linear model" = 2, "Poly Model" = 3), selected = 1)),
+
+# \## server.R Code
+
+library(shiny) library(plotly) library(lubridate)
+
+# Define server logic required to draw a histogram
+
+shinyServer(
+
+function(input, output) {
+
+    data <- read.csv("MyDatas.csv", sep = ',', quote = '"', dec = '.', stringsAsFactors = FALSE)
+    data$Date <- as.Date(data$Date, "%Y-%m-%d")
+
+    output$State <- renderUI({
+      selectInput("State", "Choose a State:", as.list(unique(data$State)), selected = levels(data$State)[60] ) 
+    })
+
+# \## server.R Code (Continues..)
+
+    output$rname <- renderUI({
+      selectInput("rname", "Choose a variable:", as.list(unique(data$SchemeName)), selected = levels(data$SchemeName)[1]) 
+    })  
+
+    output$text1 <- renderText({
+      paste("You have selected: ", input$rname, " in ", input$State)
+    })
+
+    # output$Total <- renderPrint({ input$slider })
+
+    output$slider1 <- renderUI({
+      if (input$period == "yearbegin"){
+        sliderInput("slider1", label = "From year", min = 2019, max = 2022, Total = 2021, sep = "")
+      }
+    })
+
+# \## server.R Code (Continues..)
+
+    output$slider2 <- renderUI({
+      if (input$period == "year"){
+        sliderInput("slider2", label = "Years range", min = 2019, max = 2022, Total = c(2020,2021), sep = "")
+      }
+    })
+
+    output$dates <- renderUI({
+      if (input$period == "mon"){
+        dateRangeInput("dates", label = "Date range", start = "2019-01-01", end = "2022-04-04", 
+                       min = "2019-01-01", max = "2022-04-04")
+      }
+    })
+
+# \## server.R Code (Continues..)
+
+    output$distPlot <- renderPlotly({
+      if (input$period == "all")
+      {
+        dt <- data[data$State == input$State & data$SchemeName == input$rname, ]
+      }
+      if (input$period == "yearbegin")
+      {
+        sl <- input$slider1
+        year <- as.character(sl)
+        d <- as.Date(paste(year,"-01-01", sep=""))
+        
+        dt <- data[data$State == input$State & data$SchemeName == input$rname & data$Date >= d, ]
+      }
+      
+
+# \## server.R Code (Continues..)
+
+      if (input$period == "year")
+      {
+        # d <- as.Date('2022-04-04')
+        # d <- d %m+% years(-1)
+        sl <- input$slider2
+        year1 <- as.character(sl[1])
+        year2 <- as.character(sl[2])
+        d1 <- as.Date(paste(year1,"-01-01",sep=""))
+        d2 <- as.Date(paste(year2,"-01-01",sep=""))
+
+# \## server.R Code (Continues..)
+
+        dt <- data[data$State == input$State & data$SchemeName == input$rname & data$Date >= d1 & data$Date <= d2, ]
+      }
+      if (input$period == "mon")
+      {
+        # d <- as.Date('2022-04-04')
+        # d <- d %m+% months(-1)
+        d1 <- as.Date(input$dates[1])
+        d2 <- as.Date(input$dates[2])
+        dt <- data[data$State == input$State & data$SchemeName == input$rname & data$Date >= d1, ]
+      }
+      
+
+# \## server.R Code (Continues..)
+
+      #plot_ly(x=~Date, y=~Total, data=dt, type = 'scatter', mode = 'lines')
+      p <- ggplot(data = dt, aes(x=Date, y=Total)) + geom_line()
+      
+      if ("1" %in% input$chkGroup)
+        p <- p + geom_smooth(method = "loess", aes(color="Auto Model"))
+      if ("2" %in% input$chkGroup)
+        p <- p + geom_smooth(method = "glm", aes(color="Linear Model"), formula = y~x)
+      if ("3" %in% input$chkGroup)
+        p <- p + geom_smooth(method = "glm", aes(color="Poly Model"), formula= (y ~ poly(x,2)), linetype = 1)
+      
+      p <- ggplotly(p)
+    })  })
+
+## R Code
+
+======================================================== class: mycode
+
+In this slide we show how to include R code embedded in the slide.
+
+As the data store in exteral file, let use R library.
+
+The App uses ggplot tool for plotting the data, like following
+
+\`\`\`r
+
+library(ggplot2)
+
+data('mtcars')
+
+## R Code (Continues..)
+
+========================================================
+
+qplot(wt, mpg, data=mtcars, geom=c("point", "smooth"),
+
+method="lm", formula=y\~x, color=cyl,
+
+main="Regression of MPG on Weight",
+
+xlab="Weight", ylab="Miles per Gallon")
+
+\`\`\`
+
+![plot of chunk Ex2](Figures/Ex2.png)

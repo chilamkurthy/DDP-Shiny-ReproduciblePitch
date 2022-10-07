@@ -1,0 +1,13 @@
+name: ShinyApp-ReproduciblePitch
+title: ShinyApp-ReproduciblePitch
+username:
+account: chilamkurthi
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7239228
+bundleId: 6378428
+url: https://chilamkurthi.shinyapps.io/ShinyApp-ReproduciblePitch/
+when: 1665121793.14752
+lastSyncTime: 1665121793.14754
+asMultiple: FALSE
+asStatic: FALSE
